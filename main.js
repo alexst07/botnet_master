@@ -6,6 +6,42 @@ var PORT = 3001;
 var ALPHA = 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 var ALPHA_SIZE = ALPHA.length;
 
+// connections[k] = object Connection wich id is equals to k
+var connections = {};
+
+/* ---------
+	Define a class called "Connection".
+	XXX: move this definition to another file.
+ --------------- */
+Connection = function(bot_client_partial_key) {
+
+	var fun_connect = function connect(k_c){
+		var date = new Date();	
+		var day = date.getDate();
+		var base = (day + 1) * (day + 2) * (day + 3) * (day + 13);
+		var N = 2147483647; // INT_MAX
+		var r = N/2 + Math.floor(Math.random() * (N/2)) // INT_MAX/2 <= r <= INT_MAX
+		var k_s = base ^ r;
+		var key = k_c ^ r;
+
+		return {'key':key, 'key_server':k_s};
+	}
+
+	var tmp = fun_connect(bot_client_partial_key);
+	this.private_key = tmp.key;
+	this.bot_master_partial_key = tmp.key_server;
+	this.count = 1;
+	this.id = generateConnectionId();
+	this.date_last_connection = new Date();
+
+	this.refresh = function (){
+		this.count++;
+		this.date_last_connection = new Date();
+	}
+
+}
+
+
 function generateConnectionId(){
 	var INT_MAX = 2147483647;
 	var r = Math.floor(Math.random() * 9) // 0 <= r <= 9
@@ -24,66 +60,50 @@ function generateConnectionId(){
 	return id;
 }
 
-function connect(k_c){
-	var date = new Date();	
-	var day = date.getDate();
-	var base = (day + 1) * (day + 2) * (day + 3) * (day + 13);
-	var N = 2147483647; // INT_MAX
-	var r = N/2 + Math.floor(Math.random() * (N/2)) // INT_MAX/2 <= r <= INT_MAX
-	var k_s = base ^ r;
-	var key = k_c ^ r;
+function first_connection (bot_client_partial_key, confirm_value, response){
 
-	var connection = {'key':key, 'key_server':k_s, 'count':1};
-	connection.id = generateConnectionId();
+	connection = new Connection (bot_client_partial_key);
+	response.write("<h2>NOW, YOUR ID IS "+connection.id+"</h2>");
+	response.write("<h4>KEY_SERVER "+connection.bot_master_partial_key +"</h2>");
+	var confirmation = confirm_value ^ connection.private_key;
+	response.write("<h5>CONFIRMATION MESSAGE IS "+confirmation+"</h6>");
+	response.write("<h6>PRIVATE KEY "+connection.private_key+"</h6>");
 
-	return connection;
+	connections[connection.id] = connection; // save this connection into the hash of connections
+}
+
+function find_connection (id){
+	if (connections[id] === undefined)
+		return null;
+	connections[id].refresh();
+	return connections[id];
 }
 
 
-var count = 0;
-/* ---------
-	nc: number of connections
-
-	nc[i] = k
-  only, and if only, the botclient of id i has connected k times to this server
- 
- --------------- */
-var nc = {};
-
 var server = http.createServer(function (request, response){
 	response.writeHead(200, {"Content-Type": "text/html"});
-	response.write("This is the connection number " + count + '.<br/>');
-	count++;
 
 	var result = url.parse(request.url, true);
 	var params = result.query;
 
+	// if an id was not sent, then, try to connect and get an id
 	if (params['id'] == undefined){
-		if (params['k_c'] !== undefined
-			&& params['confirm'] !== undefined){
-			// XXX: test if k_c is a number
-			connection = connect (params['k_c']);
-			response.write("<h2>NOW, YOUR ID IS "+connection.id+"</h2>");
-			response.write("<h4>KEY_SERVER "+connection.key_server+"</h2>");
-			var confirmation = params['confirm'] ^ connection.key;
-			response.write("<h5>CONFIRMATION MESSAGE IS "+confirmation+"</h6>");
-			response.write("<h6>PRIVATE KEY "+connection.key+"</h6>");
+		if (params['k_c'] !== undefined && params['confirm'] !== undefined){
+			// XXX: check if k_c is a number
+			first_connection(params['k_c'], params['confirm'], response);
 		}else{
-			response.write("<h3>PROBLEM WITH THE PARAMETERS</h3>");
+			response.write("<h2> BAD params ): </h2>");
+			response.write("<h4> Try send<br/>id<br/>or<br/>k_c and confirm </h4>");
 		}
 	}else{		
+		connection = find_connection(params['id']);
+		if (connection == null){
+			response.write("<h3>The connection " + params['id'] + " was not found  :(</h3>");
+		}else{
+			response.write("<h3>ID: " + connection.id + "<br/>Number of connections: "+ connection.count + "</h3>");
+		}
 		response.write("<h2> OK </h2>");
 	}
-
-/*	var keys = generateFirstKey();
-	response.write("<h2>"
-					+keys[2]+" XOR "+params['k_c']+"="+ (params['k_c']^keys[2])
-					+"</h2>"); 
-	
-	response.write("<h5>day = "+ keys[0] +"<br>k_s = "+keys[1]+"</h5>");
-	for(var key in result.query){
-		response.write("<h2>"+key+" : "+result.query[key]+"</h2>");
-	} */
 
 	response.end();
 });
