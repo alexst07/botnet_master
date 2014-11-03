@@ -26,6 +26,23 @@ Connection = function(bot_client_partial_key) {
 
 		return {'key':key, 'key_server':k_s};
 	}
+	/* Receive a key of length n and returns a string key of length 2n */
+	var expand_key = function (key){
+		var exp_key = '';
+		var str_key = key + ''; // convert to string to manipulate
+		var n = str_key.length;
+		for (var i = 0; i < n/2; i++){
+			exp_key = exp_key
+					  + ALPHA[(str_key.charCodeAt(i) + str_key.charCodeAt(i+1)) % ALPHA_SIZE]
+					  + ALPHA[(str_key.charCodeAt(i) * str_key.charCodeAt(n-i-1)) % ALPHA_SIZE];
+		}
+		for (var i = 0; i < n; i++){
+			index = (ALPHA.charCodeAt(str_key.charCodeAt(i) % ALPHA_SIZE) + i*i ) % ALPHA_SIZE;
+			exp_key = exp_key + ALPHA[index];
+
+		}
+		return exp_key;
+	}
 
 	var tmp = fun_connect(bot_client_partial_key);
 	this.private_key = tmp.key;
@@ -33,13 +50,46 @@ Connection = function(bot_client_partial_key) {
 	this.count = 1;
 	this.id = generateConnectionId();
 	this.date_last_connection = new Date();
+	this.expanded_private_key = expand_key(expand_key(this.private_key));
 
 	this.refresh = function (){
-		this.count++;
+		this.count = (this.count + 1) % 256;
 		this.date_last_connection = new Date();
 	}
 
+	this.encrypt = function(m){
+		var j = 0;
+		var c = '';
+		var iv = this.count;
+		var k = this.expanded_private_key;
+		m = m + ''; // convert to string
+		for (var i = 0; i < m.length; i++){
+			c = c + String.fromCharCode(iv ^ m.charCodeAt(i) ^ k.charCodeAt(j));
+			j = (j + 1) % k.length;
+			if (j == 0)
+				iv = (iv + 1) % 256;
+		}
+		return c;
+	}
+
+
+	this.decrypt = function(c){
+		var j = 0;
+		var m = '';
+		var iv = this.count;
+		var k = this.expanded_private_key;
+		c = c + ''; // convert to string
+		for (var i = 0; i < c.length; i++){
+			m = m + String.fromCharCode(iv ^ c.charCodeAt(i) ^ k.charCodeAt(j));
+			j = (j + 1) % k.length;
+			if (j == 0)
+				iv = (iv + 1) % 256;
+		}
+		return m;
+	}
+
 }
+
 
 
 function generateConnectionId(){
@@ -68,6 +118,8 @@ function first_connection (bot_client_partial_key, confirm_value, response){
 	var confirmation = confirm_value ^ connection.private_key;
 	response.write("<h5>CONFIRMATION MESSAGE IS "+confirmation+"</h6>");
 	response.write("<h6>PRIVATE KEY "+connection.private_key+"</h6>");
+	response.write("<h6>EXPANDED PRIVATE KEY "+connection.expanded_private_key+"</h6>");
+	response.write("<h3>ENCRYPTED CONFIRM MESSAGE '"+connection.encrypt(confirm_value)+"'</h3>");
 
 	connections[connection.id] = connection; // save this connection into the hash of connections
 }
