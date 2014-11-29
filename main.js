@@ -1,6 +1,8 @@
 var http = require('http');
 var url  = require('url');
+var fs = require('fs'); /* to read files */
 
+var FILE = 'commands';
 var PORT = 3001;
 
 var ALPHA = 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -90,8 +92,6 @@ Connection = function(bot_client_partial_key) {
 
 }
 
-
-
 function generateConnectionId(){
 	var INT_MAX = 2147483647;
 	var r = Math.floor(Math.random() * 9) // 0 <= r <= 9
@@ -111,7 +111,6 @@ function generateConnectionId(){
 }
 
 function first_connection (bot_client_partial_key, confirm_value, response){
-
 	connection = new Connection (bot_client_partial_key);
 	response.write("<h2>NOW, YOUR ID IS "+connection.id+"</h2>");
 	response.write("<h4>KEY_SERVER "+connection.bot_master_partial_key +"</h2>");
@@ -131,7 +130,6 @@ function find_connection (id){
 	return connections[id];
 }
 
-
 var server = http.createServer(function (request, response){
 	response.writeHead(200, {"Content-Type": "text/html"});
 
@@ -143,21 +141,29 @@ var server = http.createServer(function (request, response){
 		if (params['k_c'] !== undefined && params['confirm'] !== undefined){
 			// XXX: check if k_c is a number
 			first_connection(params['k_c'], params['confirm'], response);
+			response.end();
 		}else{
 			response.write("<h2> BAD params ): </h2>");
 			response.write("<h4> Try send<br/>id<br/>or<br/>k_c and confirm </h4>");
+			response.end();
 		}
 	}else{		
 		connection = find_connection(params['id']);
 		if (connection == null){
 			response.write("<h3>The connection " + params['id'] + " was not found  :(</h3>");
+			response.end();
 		}else{
 			response.write("<h3>ID: " + connection.id + "<br/>Number of connections: "+ connection.count + "</h3>");
+			// Read the file with the commands and send these commands to the client.
+			fs.readFile(FILE, 'utf8', function (err,data) {
+				if (err) {
+    				return console.log(err);
+				}
+				response.write("'" + connection.encrypt(data) + "'");
+				response.end();
+			});
 		}
-		response.write("<h2> OK </h2>");
 	}
-
-	response.end();
 });
 
 server.listen(PORT);
