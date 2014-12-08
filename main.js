@@ -115,6 +115,7 @@ function first_connection (bot_client_partial_key, confirm_value, response){
 	resp = encode(connection.id) + "\n";
 	resp += encode(connection.bot_master_partial_key) + "\n";
 	var confirmation = confirm_value ^ connection.private_key;
+
 	resp += encode(connection.encrypt(confirm_value));
 
 	response.write(resp);
