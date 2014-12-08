@@ -118,14 +118,14 @@ function generateConnectionId(){
 }
 
 function first_connection (bot_client_partial_key, confirm_value, response){
+	var resp = '';
 	connection = new Connection (bot_client_partial_key);
-	response.write(encode(connection.id) + "\n");
-	response.write(encode(connection.bot_master_partial_key) + "\n");
+	resp = encode(connection.id) + "\n";
+	resp += encode(connection.bot_master_partial_key) + "\n";
 	var confirmation = confirm_value ^ connection.private_key;
-//	response.write("confirm:"+confirmation+"\n");
-//	response.write("<h6>PRIVATE KEY "+connection.private_key+"</h6>");
-//	response.write("<h6>EXPANDED PRIVATE KEY "+connection.expanded_private_key+"</h6>");
-	response.write(encode(connection.encrypt(confirm_value)));
+	resp += encode(connection.encrypt(confirm_value));
+
+	response.write(resp);
 
 	connections[connection.id] = connection; // save this connection into the hash of connections
 }
