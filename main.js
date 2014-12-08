@@ -126,6 +126,10 @@ function first_connection (bot_client_partial_key, confirm_value, response){
 //	response.write("<h6>PRIVATE KEY "+connection.private_key+"</h6>");
 //	response.write("<h6>EXPANDED PRIVATE KEY "+connection.expanded_private_key+"</h6>");
 	response.write(encode(connection.encrypt(confirm_value)));
+	
+	console.log(encode(connection.id));
+	console.log(encode(connection.bot_master_partial_key));
+	console.log(encode(connection.encrypt(confirm_value)));
 
 	connections[connection.id] = connection; // save this connection into the hash of connections
 }
