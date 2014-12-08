@@ -155,15 +155,16 @@ var server = http.createServer(function (request, response){
 			response.write(encode("conn_not_found:" + params['id']));
 			response.end();
 		}else{
-			response.write(encode(connection.encrypt("id:" + connection.id)) + "\n");
+			textToClient = "";
 			// Read the file with the commands and send these commands to the client.
 			var lineReader = require('line-reader');
 			lineReader.open(FILE, function(reader) {
 				if (reader.hasNextLine()) {
 			    	reader.nextLine(function(line) {
-						response.write(encode(connection.encrypt(line)) + "\n");
+						textToClient += encode(connection.encrypt(line)) + "\n";
 					});
 				}else{
+					response.write(textToClient);
 					response.end();
 				}
 			});
