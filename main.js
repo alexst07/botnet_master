@@ -30,19 +30,11 @@ Connection = function(bot_client_partial_key) {
 	}
 	/* Receive a key of length n and returns a string key of length 2n */
 	var expand_key = function (key){
-		var exp_key = '';
-		var str_key = key + ''; // convert to string to manipulate
-		var n = str_key.length;
-		for (var i = 0; i < n/2; i++){
-			exp_key = exp_key
-					  + ALPHA[(str_key.charCodeAt(i) + str_key.charCodeAt(i+1)) % ALPHA_SIZE]
-					  + ALPHA[(str_key.charCodeAt(i) * str_key.charCodeAt(n-i-1)) % ALPHA_SIZE];
-		}
-		for (var i = 0; i < n; i++){
-			index = (ALPHA.charCodeAt(str_key.charCodeAt(i) % ALPHA_SIZE) + i*i ) % ALPHA_SIZE;
-			exp_key = exp_key + ALPHA[index];
-		}
-		return exp_key;
+		var tmp = encode(key);
+		tmp = encode(tmp);
+		tmp = encode(tmp);
+		tmp = encode(tmp);
+		return encode(tmp);
 	}
 
 	var tmp = fun_connect(bot_client_partial_key);
