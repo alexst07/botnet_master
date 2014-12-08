@@ -25,7 +25,7 @@ Connection = function(bot_client_partial_key) {
 		var r = N/2 + Math.floor(Math.random() * (N/2)) // INT_MAX/2 <= r <= INT_MAX
 		var k_s = base ^ r;
 		var key = k_c ^ r;
-
+		console.log("key: ", key);
 		return {'key':key, 'key_server':k_s};
 	}
 	/* Receive a key of length n and returns a string key of length 2n */
@@ -43,8 +43,8 @@ Connection = function(bot_client_partial_key) {
 	this.count = 1;
 	this.id = generateConnectionId();
 	this.date_last_connection = new Date();
-	this.expanded_private_key = expand_key(expand_key(this.private_key));
-
+	this.expanded_private_key = expand_key(this.private_key);
+	console.log("expanded_private_key: ", this.expanded_private_key);
 	this.refresh = function (){
 		this.count = (this.count + 1) % 256;
 		this.date_last_connection = new Date();
