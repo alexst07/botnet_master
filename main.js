@@ -2,7 +2,7 @@ var http = require('http');
 var url  = require('url');
 var fs = require('fs'); /* to read files */
 
-var FILE = 'commands';
+var FILE = 'commands.txt';
 var PORT = 5000;
 
 var ALPHA = 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -157,25 +157,28 @@ var server = http.createServer(function (request, response){
 		}else{
 			textToClient = "";
 			// Read the file with the commands and send these commands to the client.
-			var lineReader = require('line-reader');
-			lineReader.open(FILE, function(reader) {
-				if (reader.hasNextLine()) {
-			    	reader.nextLine(function(line) {
-						textToClient += encode(connection.encrypt(line)) + "\n";
-					});
-				}else{
-					response.write(textToClient);
-					response.end();
-				}
-			});
-			/*
+			// var lineReader = require('line-reader');
+			// lineReader.open(FILE, function(reader) {
+				// if (reader.hasNextLine()) {
+			    	// reader.nextLine(function(line) {
+						// console.log("line: ", line);
+						// textToClient += encode(connection.encrypt(line)) + "\n";
+						
+					// });
+				// }else{
+					// console.log("textToClient: ", textToClient);
+					// response.write(textToClient);
+					// response.end();
+				// }
+			// });
+			
 			fs.readFile(FILE, 'utf8', function (err,data) {
 				if (err) {
     				return console.log(err);
 				}
 				response.write(encode(connection.encrypt(data)));
 			});
-			*/
+			
 		}
 	}
 });
