@@ -142,6 +142,8 @@ var server = http.createServer(function (request, response){
 
 	var result = url.parse(request.url, true);
 	var params = result.query;
+	
+	console.log("params: ", params)
 
 	// if an id was not sent, then, try to connect and get an id
 	if (params['id'] == undefined){
